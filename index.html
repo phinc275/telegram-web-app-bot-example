@@ -341,6 +341,7 @@
     <button id="data_btn" onclick="DemoApp.sendTime(true);">Send current time to bot (x10)</button>
     <button onclick="DemoApp.expand();">Expand Webview</button>
     <button onclick="DemoApp.toggleMainButton(this);">Hide Main Button</button>
+    <button onclick="DemoApp.order(this);">Order</button>
     <input type="text" placeholder="Input text in regular input..." id="regular_field"/>
     <div
             class="input"
@@ -460,6 +461,27 @@
                 mainButton.show();
                 el.innerHTML = 'Hide Main Button';
             }
+        },
+
+        order(el) {
+            DemoApp.createOrder((result) => {
+                if (!result.ok) {
+                    alert(result.message);
+                    return;
+                }
+                if (!result.error) {
+                    alert(result.error);
+                    return;
+                }
+                if (!result.invoice_url) {
+                    alert("server doest not return a valid invoice url");
+                    return;
+                }
+
+                Telegram.WebApp.openInvoice(result.invoice_url, () => {
+                    console.log(arguments);
+                });
+            });
         },
 
         // actions
@@ -722,6 +744,23 @@
             });
             return false;
         },
+
+        createOrder(onCallback) {
+            fetch('http://127.0.0.1:8881/order', {
+                method     : 'POST',
+                body       : "{}",
+                credentials: 'include',
+                headers    : {
+                    'Content-Type': 'application/json'
+                }
+            }).then(function (response) {
+                return response.json();
+            }).then(function (result) {
+                onCallback && onCallback(result);
+            }).catch(function (error) {
+                onCallback && onCallback({error: 'Server error'});
+            });
+        }
 
         // Other
         apiRequest(method, data, onCallback) {
